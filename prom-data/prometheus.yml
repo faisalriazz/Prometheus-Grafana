@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds.
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # Alertmanager configuration
+          # - alertmanager:9093
+
+rule_files:
+  - "alert.yml" # Load alerting rules from this file
+
+scrape_configs:
+  - job_name: 'Server1'
+    static_configs:
+      - targets: ['x.x.x.1:9100'] # Replace x.x.x.1 with the actual IP address
+
+  - job_name: 'Server2'
+    static_configs:
+      - targets: ['x.x.x.1:9100'] # Replace x.x.x.1 with the actual IP address
+  
+  - job_name: 'MSSQL'
+    static_configs:
+      - targets: ['mssql_exporter:9100'] # Replace with actual MSSQL container IP
+
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response
+    static_configs:
+      - targets:
+        - http://google.com
+        - http://yahoo.com
+        
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115  # The blackbox exporter's address

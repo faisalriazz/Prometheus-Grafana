@@ -1,0 +1,286 @@
+{
+  "Queries": [
+    {
+      "Name": "mssql_process_status",
+      "Query": "SELECT status, COUNT(*) count FROM sys.sysprocesses GROUP BY status",
+      "Description": "Counts the number of processes per status",
+      "Usage": "GaugesWithLabels",
+      "Columns": [
+        {
+          "Name": "status",
+          "Label": "status",
+          "Usage": "GaugeLabel",
+          "Order": 0
+        },
+        {
+          "Name": "count",
+          "Label": "mssql_process_status_count",
+          "Usage": "Gauge"
+        }
+      ]
+    },
+    {
+      "Name": "mssql_process_connections",
+      "Query": "SELECT ISNULL(DB_NAME(dbid), 'other') as dbname, COUNT(dbid) as connections FROM sys.sysprocesses WHERE dbid > 0 GROUP BY dbid",
+      "Description": "Counts the number of connections per db",
+      "Usage": "GaugesWithLabels",
+      "Columns": [
+        {
+          "Name": "dbname",
+          "Label": "dbname",
+          "Usage": "GaugeLabel",
+          "Order": 0
+        },
+        {
+          "Name": "connections",
+          "Label": "mssql_process_connections_count",
+          "Usage": "Gauge"
+        }
+      ]
+    },
+    {
+      "Name": "mssql_deadlocks",
+      "Query": "SELECT cntr_value FROM sys.dm_os_performance_counters where counter_name = 'Number of Deadlocks/sec' AND instance_name = '_Total'",
+      "Description": "Number of lock requests per second that resulted in a deadlock since last restart",
+      "Columns": [
+        {
+          "Name": "cntr_value",
+          "Label": "mssql_deadlocks",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_cache_hit_ratio",
+        "Query": "SELECT cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'Buffer cache hit ratio'",
+        "Description": "Buffer cache hit ratio",
+        "Columns": [
+          {
+            "Name": "cntr_value",
+            "Label": "mssql_buffer_cache_hit_ratio",
+            "Usage": "Gauge",
+            "DefaultValue": 0
+          }
+        ]
+    },
+    {
+      "Name": "mssql_page_life_expectancy",
+      "Query": "SELECT cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'Page life expectancy'",
+      "Description": "Page life expectancy",
+      "Columns": [
+        {
+          "Name": "cntr_value",
+          "Label": "mssql_page_life_expectancy",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_io_stall",
+      "Query": "SELECT database_id, file_id, io_stall_read_ms, io_stall_write_ms, io_stall, num_of_reads, num_of_writes, num_of_bytes_read, num_of_bytes_written FROM sys.dm_io_virtual_file_stats(NULL, NULL)",
+      "Description": "I/O stall statistics",
+      "Usage": "GaugesWithLabels",
+      "Columns": [
+        {
+          "Name": "database_id",
+          "Label": "database_id",
+          "Usage": "GaugeLabel",
+          "Order": 0
+        },
+        {
+          "Name": "file_id",
+          "Label": "file_id",
+          "Usage": "GaugeLabel",
+          "Order": 1
+        },
+        {
+          "Name": "io_stall_read_ms",
+          "Label": "mssql_io_stall_read_ms",
+          "Usage": "Gauge"
+        },
+        {
+          "Name": "io_stall_write_ms",
+          "Label": "mssql_io_stall_write_ms",
+          "Usage": "Gauge"
+        },
+        {
+          "Name": "io_stall_total_ms",
+          "Label": "mssql_io_stall_total_ms",
+          "Usage": "Gauge"
+        },
+        {
+          "Name": "num_of_reads",
+          "Label": "mssql_num_of_reads",
+          "Usage": "Gauge"
+        },
+        {
+          "Name": "num_of_writes",
+          "Label": "mssql_num_of_writes",
+          "Usage": "Gauge"
+        },
+        {
+          "Name": "num_of_bytes_read",
+          "Label": "mssql_num_of_bytes_read",
+          "Usage": "Gauge"
+        },
+        {
+          "Name": "num_of_bytes_written",
+          "Label": "mssql_num_of_bytes_written",
+          "Usage": "Gauge"
+        }
+      ]
+    },
+    {
+      "Name": "mssql_active_connections",
+      "Query": "SELECT DB_NAME(dbid) as database_name, COUNT(dbid) as active_connections FROM sys.sysprocesses WHERE dbid > 0 AND status = 'runnable' OR status = 'running' GROUP BY dbid",
+      "Description": "Counts the number of active connections per database",
+      "Usage": "GaugesWithLabels",
+      "Columns": [
+        {
+          "Name": "database_name",
+          "Label": "database_name",
+          "Usage": "GaugeLabel",
+          "Order": 0
+        },
+        {
+          "Name": "active_connections",
+          "Label": "mssql_active_connections",
+          "Usage": "Gauge"
+        }
+      ]
+    },
+    {
+      "Name": "mssql_kill_connection_errors",
+      "Query": "SELECT COUNT(*) as kill_connection_errors FROM sys.dm_exec_requests WHERE status = 'killed/rollback'",
+      "Description": "Counts the number of kill connection errors",
+      "Columns": [
+        {
+          "Name": "kill_connection_errors",
+          "Label": "mssql_kill_connection_errors",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_io_stall_total",
+      "Query": "SELECT SUM(io_stall_read_ms + io_stall_write_ms) as io_stall_total FROM sys.dm_io_virtual_file_stats(NULL, NULL)",
+      "Description": "Total I/O stall time",
+      "Columns": [
+        {
+          "Name": "io_stall_total",
+          "Label": "mssql_io_stall_total",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_batch_requests",
+      "Query": "SELECT cntr_value as batch_requests FROM sys.dm_os_performance_counters WHERE counter_name = 'Batch Requests/sec'",
+      "Description": "Number of batch requests per second",
+      "Columns": [
+        {
+          "Name": "batch_requests",
+          "Label": "mssql_batch_requests",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_page_fault_count",
+      "Query": "SELECT COUNT(*) as page_fault_count FROM sys.dm_os_memory_cache_clock_hands",
+      "Description": "Number of page faults",
+      "Columns": [
+        {
+          "Name": "page_fault_count",
+          "Label": "mssql_page_fault_count",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_total_page_file_kb",
+      "Query": "SELECT total_page_file_kb FROM sys.dm_os_sys_memory",
+      "Description": "Total page file size in KB",
+      "Columns": [
+        {
+          "Name": "total_page_file_kb",
+          "Label": "mssql_total_page_file_kb",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_available_page_file_kb",
+      "Query": "SELECT available_page_file_kb FROM sys.dm_os_sys_memory",
+      "Description": "Available page file size in KB",
+      "Columns": [
+        {
+          "Name": "available_page_file_kb",
+          "Label": "mssql_available_page_file_kb",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_user_errors",
+      "Query": "SELECT COUNT(*) as user_errors FROM sys.dm_os_ring_buffers WHERE ring_buffer_type = 'RING_BUFFER_EXCEPTION'",
+      "Description": "Counts the number of user errors",
+      "Columns": [
+        {
+          "Name": "user_errors",
+          "Label": "mssql_user_errors",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_memory_utilization_percentage",
+      "Query": "SELECT (total_physical_memory_kb - available_physical_memory_kb) * 100.0 / total_physical_memory_kb as memory_utilization_percentage FROM sys.dm_os_sys_memory",
+      "Description": "Memory utilization percentage",
+      "Columns": [
+        {
+          "Name": "memory_utilization_percentage",
+          "Label": "mssql_memory_utilization_percentage",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_memory_usage",
+      "Query": "SELECT cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'Total Server Memory (KB)'",
+      "Description": "Total memory used by SQL Server",
+      "Columns": [
+        {
+          "Name": "cntr_value",
+          "Label": "mssql_total_server_memory_kb",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    },
+    {
+      "Name": "mssql_available_physical_memory_kb",
+      "Query": "SELECT available_physical_memory_kb FROM sys.dm_os_sys_memory",
+      "Description": "Available physical memory in KB",
+      "Columns": [
+        {
+          "Name": "available_physical_memory_kb",
+          "Label": "mssql_available_physical_memory_kb",
+          "Usage": "Gauge",
+          "DefaultValue": 0
+        }
+      ]
+    }
+  ],
+  "MillisecondTimeout": 4000
+}

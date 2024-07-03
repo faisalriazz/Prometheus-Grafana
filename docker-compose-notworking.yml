@@ -1,0 +1,98 @@
+services:
+  prometheus:
+    container_name: PROMETHEUS
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prom-data:/etc/prometheus
+    networks:
+      - monitoring
+
+  grafana:
+    container_name: GRAFANA
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    networks:
+      - monitoring
+    secrets:
+      - grafana_admin_password
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
+  
+  mssql-server:
+    user: root
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: MSSQL-SERVER
+    platform: linux/amd64
+    environment:
+      - ACCEPT_EULA=1
+      - MSSQL_SA_PASSWORD_FILE=/run/secrets/mssql_sa_password
+    ports:
+      - "1433:1433"
+    networks:
+      - monitoring
+    volumes:
+      - ./mssql_data:/var/opt/mssql/data
+    secrets:
+      - mssql_sa_password  
+
+  mssql_exporter:
+    container_name: MSSQL_EXPORTER
+    image: "danieloliver/mssql_exporter:latest"
+    ports:
+      - "9100:9100"
+    depends_on:
+      - mssql-server
+    environment:
+      #  - PROMETHEUS_MSSQL_DataSource=Server=tcp:mssql-server,1433;Initial Catalog=master;Persist Security Info=False;User ID_FILE=/run/secrets/mssql_exporter_user;Password_FILE=/run/secrets/mssql_exporter_password;MultipleActiveResultSets=False;Encrypt=False;TrustServerCertificate=True;Connection Timeout=10;
+      - PROMETHEUS_MSSQL_DataSource=Server=tcp:mssql-server,1433;Initial Catalog=master;Persist Security Info=False;User ID_FILE=sa;Password_FILE=Zxcvb@123;MultipleActiveResultSets=False;Encrypt=False;TrustServerCertificate=True;Connection Timeout=10;
+      - PROMETHEUS_MSSQL_ConfigFile=/app/metrics.json
+      - PROMETHEUS_MSSQL_ServerPath=metrics
+      - PROMETHEUS_MSSQL_ServerPort=9100
+      - PROMETHEUS_MSSQL_AddExporterMetrics=false
+      - PROMETHEUS_MSSQL_Serilog__MinimumLevel=Information
+    volumes:
+      - ./metrics.json:/app/metrics.json
+    # secrets:
+    #   - mssql_exporter_user
+    #   - mssql_exporter_password
+    networks:
+      - monitoring
+
+volumes:
+  prometheus-config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./prom-data/
+  grafana-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./grafana-data/
+  mssql_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./mssql_data/
+
+networks:
+  monitoring:
+    driver: bridge
+
+secrets:
+  grafana_admin_password:
+    file: ./grafana_admin_password.txt
+  mssql_sa_password:
+    file: ./mssql_sa_password.txt
+  # mssql_exporter_user:
+  #   file: ./mssql_exporter_user.txt
+  # mssql_exporter_password:
+  #   file: ./mssql_exporter_password.txt
